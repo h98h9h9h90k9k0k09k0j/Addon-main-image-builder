@@ -1,36 +1,54 @@
-# Downloaded from https://github.com/home-assistant/docker-base example: ghcr.io/home-assistant/amd64-base which is alpine:3.19 https://hub.docker.com/layers/amd64/alpine/3.19/images/sha256-6457d53fb065d6f250e1504b9bc42d5b6c65941d57532c072d929dd0628977d0?context=explore
-FROM alpine:3.19
+# Use the Debian based development container as a base
+FROM mcr.microsoft.com/devcontainers/base:debian
 
-# Install Python, pip and necessary build dependencies
-RUN apk add --no-cache \
-    python3 \
-    py3-pip 
-    #python3-dev \   The outcommented dependencies might become necessary depending on what we need later but idk
-    #gcc \         
-    #musl-dev  \       
-    #libffi-dev \     
-    #openssl-dev 
+# Set environment variables for non-interactive shell operations
+ENV \
+    DEBIAN_FRONTEND=noninteractive \
+    DEVCONTAINER=1
 
-# Create a virtual environment in the /opt/venv directory
+# Use bash for running shell commands with pipefail option for error handling
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Install system dependencies required for the devcontainer and the Home Assistant add-on
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        dbus \
+        network-manager \
+        libpulse0 \
+        xz-utils \
+        python3 \
+        python3-pip \
+        python3-venv \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy any necessary scripts and configurations from the devcontainer setup
+COPY ./common/rootfs /
+COPY ./common/rootfs_supervisor /
+COPY ./common/install /tmp/common/install
+
+# Run any necessary initialization scripts from the devcontainer setup
+RUN bash /tmp/common/devcontainer_init \
+    && bash /tmp/common/common_install_packages
+
+# Create a virtual environment to isolate the Python setup for the add-on
 RUN python3 -m venv /opt/venv
 
 # Set the environment variable to ensure commands and scripts run in the virtual environment
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python packages in the virtual environment
+# Install Python packages required for the Home Assistant add-on
 RUN pip install --no-cache-dir pyyaml websockets
-        
 
-# Set shell
-SHELL ["/bin/sh", "-o", "pipefail", "-c"]
+# Modify user permissions to allow the vscode user to use Docker
+RUN usermod -aG docker vscode
 
-# Copy data for add-on
+# Copy the Home Assistant add-on code into the container
 COPY addon.py /
 COPY config.yaml /
-# Set working directory
+
+# Set the working directory to the root. This is where the add-on will be executed
 WORKDIR /
 
-# Start the addon
-CMD ["python3", "-u", "addon.py" ] 
-
-COPY rootfs /
+# Command to start the add-on
+CMD ["python3", "-u", "addon.py"]
