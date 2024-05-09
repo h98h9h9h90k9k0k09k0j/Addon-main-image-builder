@@ -24,6 +24,8 @@ ingress: true
 ingress_port: 3030
 ingress_entry": "/app"
 ingress_stream: true
-options: {}
-schema: {}
+options:
+  run_type: "server"
+schema:
+  run_type: "string"
 devices: ["/dev/video0:/dev/video0:rwm"]
