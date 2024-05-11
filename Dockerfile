@@ -41,7 +41,7 @@ RUN chmod +x /app/run.sh
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Expose necessary ports
-EXPOSE 3030 8000
+EXPOSE 3030 8080
 
 # Command to run the Home Assistant add-on
 CMD ["bash", "run.sh"]

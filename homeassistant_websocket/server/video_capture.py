@@ -11,14 +11,18 @@ import asyncio
     
 capture_task = None
 frame_rate = 20
-resolution = (640, 480)
+resolution = "640x480"
 cap = None
 
 class VideoHandler:
+    global cap
+    global capture_task
+    global frame_rate
+    global resolution
+
     @staticmethod
     async def capture_video(websocket):
         # Open the video device
-        global cap
         cap = cv2.VideoCapture('/dev/video0')
         if not cap.isOpened():
             logging.error("Error: Camera could not be accessed.")
@@ -28,7 +32,7 @@ class VideoHandler:
             return
         executor = ThreadPoolExecutor(max_workers=1)
         try:
-            global capture_task
+            
             capture_task = asyncio.ensure_future(asyncio.get_event_loop().run_in_executor(executor, read_frames))
             await capture_task
         except Exception as e:
@@ -47,14 +51,14 @@ class VideoHandler:
 
         @staticmethod
         async def read_frames():
-                running = True
-                while running:
-                    ret, frame = cap.read()
-                    if not ret:
-                        logging.error("Error: Can't receive frame.")
-                        running = False
-                    else:
-                        await VideoHandler.send_video_data(frame, websocket)
+            running = True
+            while running:
+                ret, frame = cap.read()
+                if not ret:
+                    logging.error("Error: Can't receive frame.")
+                    running = False
+                else:
+                    await VideoHandler.send_video_data(frame, websocket)
 
     # Stop the video capture
     @staticmethod
@@ -70,15 +74,13 @@ class VideoHandler:
 
     # set the frame rate for the video capture
     @staticmethod
-    async def set_frame_rate(fps):
-        global frame_rate
+    async def set_frame_rate(fps):    
         frame_rate = fps
         cap.set(cv2.CAP_PROP_FPS, fps)
 
     # set the resolution for the video capture
     @staticmethod
     async def set_resolution(res):
-        global resolution
         resolution = res
         width, height = res.split('x')
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(width))
