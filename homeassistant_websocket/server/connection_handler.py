@@ -47,47 +47,90 @@ class ConnectionHandler:
     async def manage_client(websocket, clients, client_id):
         try:
             if clients[websocket]["type"] == "frontend":
-                await ConnectionHandler.frontend_client_handler(websocket, client_id)
+                await ConnectionHandler.frontend_client_handler(websocket, client_id, clients)
             elif clients[websocket]["type"] == "camera_client":
-                await ConnectionHandler.camera_client_handler(websocket, client_id)
+                await ConnectionHandler.camera_client_handler(websocket, client_id, clients)
         except Exception as e:
             logging.error(f"Error in manage_client: {e}")
 
     @staticmethod
-    async def frontend_client_handler(websocket, client_id):
+    async def frontend_client_handler(websocket, client_id, clients):
         try:
             async for message in websocket:
                 logging.info(f"Received message from {client_id}: {message}")
                 if "ping" in message:
                     await websocket.send(json.dumps({"message": "pong"}))
+                
+                # Show connected clients
+                if "show_clients" in message:
+                    connected_clients = []
+                    for client in clients:
+                        connected_clients.append(clients[client]["id"])
+                    await websocket.send(json.dumps({"message": "Connected clients", "clients": connected_clients}))
+
+                # Get camera feed from server and send to frontend
+                if "get_video_feed" in message:
+                    await VideoHandler.stop_video_capture()
+                    await VideoHandler.capture_video(websocket)
+
+                # Get performance metrics for the server and clients
+                if "get_performance_metrics" in message:
+                    # Fecth server performance metrics
+                    
+                    # Fetch client performance metrics
+                    for client in clients:
+                        if clients[client]["type"] == "camera_client":
+                            await client.send(json.dumps({"message": "get_performance_metrics"}))
+
+                # Get motion or face detection screenshots and timestamps
+                if "get_detection_data" in message:
+                    for client in clients:
+                        if clients[client]["type"] == "camera_client":
+                            await client.send(json.dumps({"message": "get_detection_data"}))
+
+                # Set video parameters
+                if "set_camera_parameters" in message:
+                    # Set video frame rate
+                    if "set_frame_rate" in message:
+                        frame_rate = message["set_frame_rate"]
+                        VideoHandler.set_frame_rate(frame_rate)
+
+                    # Set video resolution
+                    if "set_resolution" in message:
+                        resolution = message["set_resolution"]
+                        VideoHandler.set_resolution(resolution)
+
+                    # Set video processing mode
+                    if "set_processing_mode" in message:
+                        processing_mode = message["set_processing_mode"]
+                        # send message to client to set processing mode
+                        for client in clients:
+                            if clients[client]["type"] == "camera_client":
+                                await client.send(json.dumps({"message": "set_processing_mode", "mode": processing_mode}))
+
+                # Start stream
+                if "start_video" in message:
+                    for client in clients:
+                        if clients[client]["type"] == "camera_client":
+                            await client.send(json.dumps({"message": "start_video"}))
+
+                # Stop stream
+                if "stop_video" in message:
+                    for client in clients:
+                        if clients[client]["type"] == "camera_client":
+                            await client.send(json.dumps({"message": "stop_video"}))
+
+                # Close all connections
+                if "close_clients" in message:
+                    for client in clients:
+                        await client.send(json.dumps({"message": "close"}))
+                        await client.close()
+                    
         except Exception as e:
             logging.error(f"Error in frontend_client_handler: {e}")
 
     @staticmethod
-    async def camera_client_handler(websocket, client_id):
-        running = False
-        cap = None
-        executor = ThreadPoolExecutor(max_workers=1)
-        capture_task = None
-
-        async def capture_video():
-            nonlocal running
-            nonlocal cap
-            try:
-                while running:
-                    ret, frame = cap.read()
-                    if not ret:
-                        logging.error("Error: Can't receive frame.")
-                        running = False
-                    else:
-                        await VideoHandler.send_video_data(frame, websocket)
-            except Exception as e:
-                logging.error(f"Error in capture_video: {e}")
-            finally:
-                if cap is not None:
-                    cap.release()
-                    cv2.destroyAllWindows()
-
+    async def camera_client_handler(websocket, client_id, clients):
         try:
             async for message in websocket:
                 logging.info(f"Received message from {client_id}: {message}")
@@ -95,33 +138,30 @@ class ConnectionHandler:
                     await websocket.send(json.dumps({"message": "pong"}))
 
                 if "start_video" in message:
-                    if capture_task is not None and not capture_task.done():
-                        logging.info("Video capture is already running")
-                        continue
-                    # Open the video device
-                    cap = cv2.VideoCapture('/dev/video0')
-                    if not cap.isOpened():
-                        logging.error("Error: Camera could not be accessed.")
-                        return
-                    running = True
-                    # Run the video capture in a separate thread
-                    capture_task = asyncio.ensure_future(asyncio.get_event_loop().run_in_executor(executor, capture_video))
+                    await VideoHandler.capture_video(websocket)
 
                 if "stop_video" in message:
-                    logging.info("Video stream stopped")
-                    running = False
-                    if capture_task is not None and not capture_task.done():
-                        capture_task.cancel()
-                        try:
-                            await capture_task
-                        except asyncio.CancelledError:
-                            logging.info("Video capture task was cancelled")
+                    await VideoHandler.stop_video_capture()
+                
+                # Handlle alerts from the camera client
+                if "motion_detected" or "face_detected" in message:
+                    # alert the frontend client if connected
+                    for client in clients:
+                        if clients[client]["type"] == "frontend":
+                            await client.send(json.dumps({"message": message}))
 
-        finally:
-            if capture_task is not None and not capture_task.done():
-                capture_task.cancel()
-                try:
-                    await capture_task
-                except asyncio.CancelledError:
-                    logging.info("Video capture task was cancelled")
-            executor.shutdown(wait=True)
+                # Send detection data to the frontend client
+                if "detection_data" in message:
+                    for client in clients:
+                        if clients[client]["type"] == "frontend":
+                            await client.send(json.dumps({"message": message}))
+
+                # Handle camera client performance metrics
+                if "performance_metrics" in message:
+                    # send performance metrics to the frontend client
+                    for client in clients:
+                        if clients[client]["type"] == "frontend":
+                            await client.send(json.dumps({"message": message}))
+
+        except Exception as e:
+            logging.error(f"Error in camera_client_handler: {e}")
