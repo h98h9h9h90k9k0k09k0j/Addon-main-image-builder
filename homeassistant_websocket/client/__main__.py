@@ -4,7 +4,7 @@ import asyncio
 def main() -> None:
     # it is hardcoded for now
     client_id = 1
-    uri = "ws://host.docker.internal:3030"
+    uri = "ws://http://homeassistant.local:3030/"
     client = Client(client_id, uri)
     client.run()
 
