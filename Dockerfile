@@ -2,7 +2,7 @@
 # ghcr.io/home-assistant/aarch64-base-debian:bookworm
 # ghcr.io/home-assistant/amd64-base-debian:bookworm
 
-FROM ghcr.io/home-assistant/amd64-base-debian:bookworm
+FROM ghcr.io/home-assistant/aarch64-base-debian:bookworm
 
 # Install Python and necessary build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

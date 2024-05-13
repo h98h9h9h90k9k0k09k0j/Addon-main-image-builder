@@ -22,8 +22,12 @@ class VideoHandler:
 
     @staticmethod
     async def capture_video(websocket):
-        # Open the video device
-        cap = cv2.VideoCapture('/dev/video0')
+        try:
+            # Open the video device
+            cap = cv2.VideoCapture(0)
+        except Exception as e:
+            logging.error(f"Error in capture_video: {e}")
+            return
         if not cap.isOpened():
             logging.error("Error: Camera could not be accessed.")
             return

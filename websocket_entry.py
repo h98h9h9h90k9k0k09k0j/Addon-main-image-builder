@@ -4,6 +4,7 @@ import sys
 from homeassistant_websocket.server.__main__ import main as server_main
 import json
 
+'''
 # The user should configure in the options file whether the script should run as a server or client
 def load_config():
     # Path to the configuration file
@@ -11,6 +12,7 @@ def load_config():
     with open(config_path, 'r') as config_file:
         config = json.load(config_file)
     return config
+'''
 
 # config = load_config()
 # run_type = config["run_type"]
