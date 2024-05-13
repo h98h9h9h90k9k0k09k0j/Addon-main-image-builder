@@ -6,7 +6,7 @@ echo "activated virtual enviroment"
 
 # Start the WebSocket server in the background
 python3 /app/websocket_entry.py &
-echo "started websocket server in background"
+echo "started client"
 
 # Wait for any process to exit
 echo "waiting for process to exit"
