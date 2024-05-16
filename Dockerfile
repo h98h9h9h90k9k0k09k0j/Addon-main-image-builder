@@ -5,7 +5,7 @@
 FROM ghcr.io/home-assistant/aarch64-base-debian:bookworm
 
 # Install Python and necessary build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     python3.11 \
     python3-pip \
     python3.11-dev \
@@ -15,6 +15,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11-venv \
     git \
     dos2unix \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    v4l-utils \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
