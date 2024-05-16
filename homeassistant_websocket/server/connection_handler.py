@@ -11,7 +11,8 @@ from .gstreamer_pipeline import GStreamerPipeline
 
 class ConnectionHandler:
     logging.basicConfig(level=logging.INFO)
-    video_streams = {}
+    #video_streams = {}
+    video_pipeline = GStreamerPipeline()
     
     @staticmethod
     async def register(websocket, clients):
@@ -79,20 +80,22 @@ class ConnectionHandler:
                 # Get camera feed from server and send to frontend
                 if "get_video_feed" in message:
                     try:
-                        if client_id in ConnectionHandler.video_streams:
-                            await ConnectionHandler.video_streams[client_id].start_pipeline()
-                        else:
-                            logging.error(f"No video pipeline found for client {client_id}")
+                        await ConnectionHandler.video_pipeline.start_pipeline()
+                        #if client_id in ConnectionHandler.video_streams:
+                            #await ConnectionHandler.video_streams[client_id].start_pipeline()
+                        #else:
+                            #logging.error(f"No video pipeline found for client {client_id}")
                     except Exception as e:
                         logging.error(f"Error starting video pipeline: {e}")
 
                 if "stop_video_feed" in message:
                     try:
-                        if client_id in ConnectionHandler.video_streams:
-                            await ConnectionHandler.video_streams[client_id].stop_pipeline()
-                            del ConnectionHandler.video_streams[client_id]
-                        else:
-                            logging.error(f"No video pipeline found for client {client_id}")
+                        await ConnectionHandler.video_pipeline.stop_pipeline()
+                        #if client_id in ConnectionHandler.video_streams:
+                            #await ConnectionHandler.video_streams[client_id].stop_pipeline()
+                            #del ConnectionHandler.video_streams[client_id]
+                        #else:
+                            #logging.error(f"No video pipeline found for client {client_id}")
                     except Exception as e:
                         logging.error(f"Error stopping video pipeline: {e}")
 
