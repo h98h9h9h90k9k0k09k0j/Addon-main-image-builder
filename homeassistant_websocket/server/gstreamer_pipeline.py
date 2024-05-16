@@ -6,13 +6,13 @@ class GStreamerPipeline:
     def __init__(self):
         self.process = None
 
-    def start_pipeline(self):
+    async def start_pipeline(self):
         try:
             # Start the GStreamer pipeline using subprocess
             self.process = subprocess.Popen(
-                ['gst-launch-1.0', 'v4l2src', 'device=/dev/video0', '!', 'video/x-raw,framerate=30/1', '!', 
-                 'videoconvert', '!', 'omxh264enc', '!', 'rtph264pay', 'config-interval=1', '!', 
-                 'gdppay', '!', 'tcpserversink', 'host=0.0.0.0', 'port=5000'],
+                ['gst-launch-1.0', 'v4l2src', 'device=/dev/video0', '!', 'image/jpeg,framerate=30/1', '!', 
+                 'jpegdec', '!', 'videoconvert', '!', 'video/x-raw,format=I420', '!', 'v4l2h264enc', '!', 'rtph264pay', 'config-interval=1', '!', 
+                 'gdppay', '!', 'tcpserversink', 'host=0.0.0.0', 'port=8080'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
@@ -20,7 +20,7 @@ class GStreamerPipeline:
         except Exception as e:
             print(f"Failed to start GStreamer pipeline: {e}")
 
-    def stop_pipeline(self):
+    async def stop_pipeline(self):
         if self.process:
             try:
                 # Send SIGINT to the process to terminate it gracefully
@@ -30,11 +30,9 @@ class GStreamerPipeline:
             except Exception as e:
                 print(f"Failed to stop GStreamer pipeline: {e}")
 
-    def restart_pipeline(self):
+    async def restart_pipeline(self):
         self.stop_pipeline()
         self.start_pipeline()
 
-
-    gst_pipeline = GStreamerPipeline()
 
 

@@ -22,8 +22,9 @@ RUN apt-get update && apt-get install -y \
     gstreamer1.0-plugins-ugly \
     gstreamer1.0-libav \
     v4l-utils \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+    ffmpeg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app

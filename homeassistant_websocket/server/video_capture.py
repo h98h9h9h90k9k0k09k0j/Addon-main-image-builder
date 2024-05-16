@@ -6,7 +6,6 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 import logging
 import time
-import cv2
 import asyncio
 
     

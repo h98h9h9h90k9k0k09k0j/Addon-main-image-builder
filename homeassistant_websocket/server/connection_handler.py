@@ -1,7 +1,6 @@
 import asyncio
 import json
-from .video_capture import VideoHandler
-import cv2
+# from .video_capture import VideoHandler
 from concurrent.futures import ThreadPoolExecutor
 import logging
 from .gstreamer_pipeline import GStreamerPipeline
@@ -71,13 +70,31 @@ class ConnectionHandler:
                     await websocket.send(json.dumps({"message": "Connected clients", "clients": connected_clients}))
 
                 if "new_camera" in message:
-                    #video_pipeline = GStreamerPipeline{}
-                    ConnectionHandler.video_streams
+                    try:
+                        video_pipeline = GStreamerPipeline()
+                        ConnectionHandler.video_streams[client_id] = video_pipeline
+                    except Exception as e:
+                        logging.error(f"Error creating video pipeline: {e}")
 
                 # Get camera feed from server and send to frontend
                 if "get_video_feed" in message:
-                    await VideoHandler.stop_video_capture()
-                    await VideoHandler.capture_video(websocket)
+                    try:
+                        if client_id in ConnectionHandler.video_streams:
+                            await ConnectionHandler.video_streams[client_id].start_pipeline()
+                        else:
+                            logging.error(f"No video pipeline found for client {client_id}")
+                    except Exception as e:
+                        logging.error(f"Error starting video pipeline: {e}")
+
+                if "stop_video_feed" in message:
+                    try:
+                        if client_id in ConnectionHandler.video_streams:
+                            await ConnectionHandler.video_streams[client_id].stop_pipeline()
+                            del ConnectionHandler.video_streams[client_id]
+                        else:
+                            logging.error(f"No video pipeline found for client {client_id}")
+                    except Exception as e:
+                        logging.error(f"Error stopping video pipeline: {e}")
 
                 # Get performance metrics for the server and clients
                 if "get_performance_metrics" in message:
@@ -99,12 +116,12 @@ class ConnectionHandler:
                     # Set video frame rate
                     if "set_frame_rate" in message:
                         frame_rate = message["set_frame_rate"]
-                        VideoHandler.set_frame_rate(frame_rate)
+                        #VideoHandler.set_frame_rate(frame_rate)
 
                     # Set video resolution
                     if "set_resolution" in message:
                         resolution = message["set_resolution"]
-                        VideoHandler.set_resolution(resolution)
+                        #VideoHandler.set_resolution(resolution)
 
                     # Set video processing mode
                     if "set_processing_mode" in message:
@@ -143,11 +160,11 @@ class ConnectionHandler:
                 if "ping" in message:
                     await websocket.send(json.dumps({"message": "pong"}))
 
-                if "start_video" in message:
-                    await VideoHandler.capture_video(websocket)
+                #if "start_video" in message:
+                    #await VideoHandler.capture_video(websocket)
 
-                if "stop_video" in message:
-                    await VideoHandler.stop_video_capture()
+                #if "stop_video" in message:
+                    #await VideoHandler.stop_video_capture()
                 
                 # Handlle alerts from the camera client
                 if "motion_detected" or "face_detected" in message:
