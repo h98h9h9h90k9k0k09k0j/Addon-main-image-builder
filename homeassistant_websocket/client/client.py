@@ -85,31 +85,30 @@ class Client:
         try:
             logging.info(f"Client {self.client_id} is now listening to the server.")
             await self.ping(websocket)
-            await self.update_status(websocket)
+            #await self.update_status(websocket)
             while True:
                 response = await websocket.recv()
                 message = json.loads(response)
-                command = message.get("command", "")
-                if command == "start_video":
+                if "start_video" in message:
                     await self.start_video_capture()
-                elif command == "stop_video":
+                elif "stop_video" in message:
                     await self.stop_video_capture()
-                elif command == "process":
+                elif "process" in message:
                     await self.process(websocket)
-                elif command == "motion_detection":
+                elif "motion_detection" in message:
                     self.current_task = "motion_detection"
                     logging.info("Starting motion detection")
-                elif command == "stop_motion_detection":
+                elif "stop_motion_detection" in message:
                     self.current_task = None
                     logging.info("Stopping motion detection")
-                elif command == "face_detection":
+                elif "face_detection" in message:
                     self.current_task = "face_detection"
                     logging.info("Starting face_detection")
-                elif command == "stop_face_detection":
+                elif "stop_face_detection" in message:
                     self.current_task = None
                     logging.info("Stopping face_detection")
                 else:
-                    logging.info(f"Unknown command received: {command}")
+                    logging.info(f"Unknown command received: {message}")
         except websockets.exceptions.ConnectionClosedError as e:
             logging.error(f"Connection to server closed unexpectedly: {e}")
         except Exception as e:
