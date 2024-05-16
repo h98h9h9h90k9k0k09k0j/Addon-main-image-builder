@@ -15,16 +15,16 @@ RUN apt-get update && apt-get install -y \
     python3.11-venv \
     git \
     dos2unix \
-    gstreamer1.0-tools \
-    gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav \
-    v4l-utils \
+    curl \
     ffmpeg && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Download and install MediaMTX
+RUN curl -L -o mediamtx.tar.gz https://github.com/bluenviron/mediamtx/releases/download/v1.8.1/mediamtx_v1.8.1_linux_arm64v8.tar.gz; \
+    tar -xzf mediamtx.tar.gz && \
+    mv mediamtx /usr/local/bin/mediamtx \
+    && chmod a+x /usr/local/bin/mediamtx
 
 # Set working directory
 WORKDIR /app
@@ -47,6 +47,6 @@ RUN pip install --upgrade pip \
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Expose necessary ports
-EXPOSE 3030 8080
+EXPOSE 3030 8080 1935 8554 1234 9000
 
 
