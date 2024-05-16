@@ -1,4 +1,2 @@
 pyyaml
 websockets
-numpy
-opencv-python-headless

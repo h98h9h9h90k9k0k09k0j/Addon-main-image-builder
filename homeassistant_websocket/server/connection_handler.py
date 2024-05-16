@@ -4,6 +4,7 @@ from .video_capture import VideoHandler
 import cv2
 from concurrent.futures import ThreadPoolExecutor
 import logging
+from .gstreamer_pipeline import GStreamerPipeline
 
 # Manages the server connections
 # Will handle behaviour between the server, client and frontend
@@ -11,6 +12,7 @@ import logging
 
 class ConnectionHandler:
     logging.basicConfig(level=logging.INFO)
+    video_streams = {}
     
     @staticmethod
     async def register(websocket, clients):
@@ -67,6 +69,10 @@ class ConnectionHandler:
                     for client in clients:
                         connected_clients.append(clients[client]["id"])
                     await websocket.send(json.dumps({"message": "Connected clients", "clients": connected_clients}))
+
+                if "new_camera" in message:
+                    #video_pipeline = GStreamerPipeline{}
+                    ConnectionHandler.video_streams
 
                 # Get camera feed from server and send to frontend
                 if "get_video_feed" in message:

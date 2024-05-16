@@ -53,7 +53,7 @@ class VideoHandler:
             try:
                 device_path = f"/dev/video{i}"
                 cap = cv2.VideoCapture(i)
-                if cap.isOpened() and i != 14:
+                if cap.isOpened():
                     logging.info(f"Successfully opened {device_path}")
                     # Initialization delay to allow the camera to warm up
                     time.sleep(5)  # Delay for 5 seconds
