@@ -19,40 +19,15 @@ class Client:
         self.uri = uri
         self.client_id = client_id
         self.status = 0
+        self.capture_task = None
+        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.video_sources = ["tcp://192.168.1.26:8080", "tcp://192.168.1.100:8080"]
+        self.current_task = None
+        self.video_feed = None
 
-    """ abstraction
-    async def send_message(websocket, message):
-        try:
-            await websocket.send(message)
-        except Exception as e:
-            logging.error(f"Error occurred while sending message: {e}")
-    """
-
-    """ If we need to send the videofeed forward
-    async def video_forwarded(self, websocket):
-        try:
-        # Forward the livestream to the server
-            cap = cv2.VideoCapture(0)  # Capture frames from camera 0 
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    break
-
-                # Encode frame to base64
-                _, buffer = cv2.imencode('.jpg', frame)
-                frame_base64 = base64.b64encode(buffer)
-
-                # Send frame to the server
-                await websocket.send(frame_base64)
-
-            cap.release()
-        except Exception as e:
-            logging.error(f"Error occurred during livestream forwarding: {e}")
-    """
     async def get_cpu_usage(self):
-        cpu_usage = psutil.cpu_percent()
-        return cpu_usage
-    
+        return psutil.cpu_percent()
+
     async def update_status(self, websocket):
         self.status = await self.get_cpu_usage()
         if self.status > 80:
@@ -85,33 +60,23 @@ class Client:
         except Exception as e:
             logging.error(f"Error occurred while deleting frames: {e}")
 
-    async def process(self, frame, command, message):
-        executor = ThreadPoolExecutor(max_workers=1)
-        capture_task = None
-        try: 
-            # Process the frame according to the command
-            if command == 'motion_detection':
-                if capture_task is not None and not capture_task.done():
-                    logging.info("Video capture is already running")
-                capture_task = asyncio.ensure_future(asyncio.get_event_loop().run_in_executor(executor, VideoProcessor.motion_detection(frame)))
-                message = 'Motion detected. Do you want to send the frames to the server? (yes/no)'
-                return message
-            elif command == 'detect_motion':
-                if await VideoProcessor.motion_detected(frame):
-                    message = 'Motion detected'
-                    return message
-                    # await self.video_forwarded(websocket)
-            elif command == 'emotion':
-                if capture_task is not None and not capture_task.done():
-                    logging.info("Video capture is already running")
-                VideoProcessor.emotion_recognition(frame)
-                capture_task = asyncio.ensure_future(asyncio.get_event_loop().run_in_executor(executor, VideoProcessor.emotion_recognition(frame)))
-            else:
-                VideoProcessor.process_video(frame)
-            # Add more options as needed
+    async def process(self, websocket):
+        try:
+            if self.current_task == "motion_detection":
+                # Perform motion detection
+                logging.info("Performing motion detection")
+                VideoProcessor.motion_detection(self.video_feed)
+                
+            elif self.current_task == "face_detection":
+                # Perform emotion recognition
+                logging.info("Performing face detection")
+                VideoProcessor.face_recognition(self.video_feed)
 
-            executor.shutdown(wait=True)
-            return None  # Return the result of the processing
+            else:
+                # Default processing
+                logging.info("Performing default processing")
+                self.capture_video(websocket)
+
         except Exception as e:
             logging.error(f"Error occurred during processing: {e}")
             return None
@@ -121,37 +86,71 @@ class Client:
             logging.info(f"Client {self.client_id} is now listening to the server.")
             await self.ping(websocket)
             await self.update_status(websocket)
-            response = await websocket.recv()
-            if response.startswith("CMD"):  # Check response start string
-                command = response.split(" ", 1)[1]  # Extract the command
-                print("Received a command processing request.")
-            else:
-                # Decode the frame
-                b64_decoded = base64.b64decode(response)
-                np_data = np.frombuffer(b64_decoded, dtype=np.uint8)
-                frame = cv2.imdecode(np_data, flags=1)
-
-                # Process the frame
-                result = await self.process(frame, command) #Hvor kommer command fra? lige nu kan command undgås i linje 125
-                print("Frame has been processed.")
-
-                if result:
-                    print("Sending success message to server...")
-                    await websocket.send(f"RESULT{self.client_id}: Success => {result}")
-                    response = input("Do you wish to retrieve the images? (yes/no): ").lower()
-                    if response == "yes":
-                        print("Sending frames to the server...")
-                        await self.send_frames_to_server(websocket)
-                    else:
-                        print("Frames will not be sent to the server. Deleting frames...")
-                        self.delete_frames()
+            while True:
+                response = await websocket.recv()
+                message = json.loads(response)
+                command = message.get("command", "")
+                if command == "start_video":
+                    await self.start_video_capture()
+                elif command == "stop_video":
+                    await self.stop_video_capture()
+                elif command == "process":
+                    await self.process(websocket)
+                elif command == "motion_detection":
+                    self.current_task = "motion_detection"
+                    logging.info("Starting motion detection")
+                elif command == "stop_motion_detection":
+                    self.current_task = None
+                    logging.info("Stopping motion detection")
+                elif command == "face_detection":
+                    self.current_task = "face_detection"
+                    logging.info("Starting face_detection")
+                elif command == "stop_face_detection":
+                    self.current_task = None
+                    logging.info("Stopping face_detection")
                 else:
-                    print("Sending failure message to server...")
-                    await websocket.send(f"RESULT{self.client_id}: Fail => {result}")
+                    logging.info(f"Unknown command received: {command}")
         except websockets.exceptions.ConnectionClosedError as e:
             logging.error(f"Connection to server closed unexpectedly: {e}")
         except Exception as e:
             logging.error(f"Error occurred during the communication with server: {e}")
+
+    async def start_video_capture(self):
+        for address in self.video_sources:
+            logging.info(f"Trying to capture from {address}")
+            cap = cv2.VideoCapture(address)
+            if cap.isOpened():
+                logging.info(f"Successfully started capturing from {address}")
+                self.video_feed = cap
+            else:
+                logging.warning(f"Failed to capture from {address}")
+        if self.capture_task is None:
+            logging.error("Failed to start video capture from all sources")
+
+    async def stop_video_capture(self):
+        if self.capture_task:
+            self.capture_task.cancel()
+            self.capture_task = None
+            self.video_feed.release()
+            self.video_feed = None
+            logging.info("Video capture stopped")
+
+    async def capture_video(self, websocket):
+        try:
+            while self.video_feed.isOpened():
+                ret, frame = self.video_feed.read()
+                if not ret:
+                    break
+                await websocket.send(json.dumps("frame read succesfully"))
+                #_, buffer = cv2.imencode('.jpg', frame)
+                #frame_base64 = base64.b64encode(buffer).decode('utf-8')
+                
+        except Exception as e:
+            logging.error(f"Error occurred during video capture: {e}")
+        finally:
+            self.video_feed.release()
+
+
     
     async def connect(self):
         logging.info(f"Client {self.client_id} trying to connect to the server.")
@@ -174,15 +173,15 @@ class Client:
                 await websocket.close()
 
     def run(self):
-        asyncio.get_event_loop().run_until_complete(self.connect())
-        asyncio.get_event_loop().run_forever()
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.connect())
+        loop.run_forever()
 
     async def ping(self, websocket, ping_pong_interval_sec=10):
         try:
             await websocket.send(json.dumps({"message": "ping"}))
             response = await websocket.recv()
             logging.info(f"< Response from the server: {response}")
-            # await asyncio.sleep(ping_pong_interval_sec)
         except Exception as e:
             logging.error(f"Error occurred during ping-pong: {e}")
 

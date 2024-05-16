@@ -61,7 +61,7 @@ class VideoProcessor:
         # names related to ids: example ==> Marcelo: id=1,  etc
         names = name 
         # Initialize and start realtime video capture
-        cam = cv2.VideoCapture(video_source)
+        cam = video_source
         cam.set(3, 640)  # set video width
         cam.set(4, 480)  # set video height
         # Define min window size to be recognized as a face
@@ -156,7 +156,7 @@ class VideoProcessor:
         face_recognizer(name, video_source)
 
     @staticmethod
-    async def motion_detection(video_source, message, websocket, clients):
+    async def motion_detection(video_source):
         cap = cv2.VideoCapture(video_source)
 
         path = "img_motion_det" #  Please, Check if path is created inside client folder
