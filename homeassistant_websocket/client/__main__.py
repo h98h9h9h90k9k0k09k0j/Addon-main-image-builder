@@ -1,11 +1,12 @@
 from .client import Client
+from .new_client import NewClient
 import asyncio
 
 def main() -> None:
     # it is hardcoded for now
-    client_id = 1
+    #client_id = 1
     uri = "ws://homeassistant.local:3030/"
-    client = Client(client_id, uri)
+    client = NewClient(uri)
     client.run()
 
 

@@ -21,6 +21,7 @@ class VideoProcessor:
         cam.set(4, int(height))
         cam.set(cv2.CAP_PROP_FPS, framerate)
 
+    
     def face_training():
         # Path for face image database
         path = 'dataset'
@@ -127,8 +128,8 @@ class VideoProcessor:
         face_detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
         # For each person, enter one numeric face id
         face_id = input('\n enter user id end press <return> ==>  ')
-        id_str, name = face_id.split()
-        id = int(id_str)
+        #id_str, name = face_id.split()
+        #id = int(id_str)
         print("\n [INFO] Initializing face capture. Look the camera and wait ...")
         # Initialize individual sampling face count
         count = 0
@@ -152,8 +153,8 @@ class VideoProcessor:
         print("\n [INFO] Exiting 1/3 Program and cleanup stuff")
         cam.release()
         cv2.destroyAllWindows()
-        face_training()
-        face_recognizer(name, video_source)
+        #face_training()
+        #face_recognizer(name, video_source)
 
     @staticmethod
     async def motion_detection(video_source):

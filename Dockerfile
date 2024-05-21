@@ -1,11 +1,12 @@
 # Home Assistant Debian base image
-FROM ghcr.io/home-assistant/amd64-base-debian:bookworm
-
+#FROM ghcr.io/home-assistant/amd64-base-debian:bookworm
+FROM debian
 # Install Python and necessary build dependencies
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-dev \
+    python3-tk \
     libffi-dev \
     libssl-dev \
     libopencv-dev \

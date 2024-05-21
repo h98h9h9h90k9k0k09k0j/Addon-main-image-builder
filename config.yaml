@@ -7,17 +7,12 @@ arch:
   - aarch64
   - amd64
 startup: services
-ports:
-  8000/tcp: 8080
-  9123/tcp: 9123
-  3030/tcp: 3030
-#websocket_url: "ws://0.0.0.0:3000"
+#ports:
+#  8000/tcp: 8080
+#  9123/tcp: 9123
+#  3030/tcp: 3030
 device_id: "abcde"
 hassio_api: true
 host_dbus: true
 host_network: true
 # Hvis ingress er nødvendigt
-options:
-  run_type: "client"
-schema:
-  run_type: "string"
