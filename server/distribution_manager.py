@@ -17,9 +17,9 @@ class DistributionManager:
     def list_clients(self):
         return list(self.external_devices.keys())
 
-    def start_task(self, task_id, task_type, input_url, client_id):
+    def start_task(self, task_id, task_type, client_id):
         if task_type == 'video_stream':
-            self.ffmpeg_manager.start_stream(task_id, input_url)
+            self.ffmpeg_manager.start_stream(task_id)
             if client_id in self.external_devices:
                 self.tasks[task_id] = {
                     'type': task_type,
@@ -32,7 +32,7 @@ class DistributionManager:
                     'type': task_type,
                     'client_id': client_id
                 }
-                self.external_devices[client_id].send_task(task_id, task_type, input_url)  # Assuming input_url is used as payload
+                self.external_devices[client_id].send_task(task_id, task_type)  
 
     def stop_task(self, task_id):
         if task_id in self.tasks:

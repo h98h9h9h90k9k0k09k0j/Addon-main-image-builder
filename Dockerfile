@@ -47,6 +47,8 @@ RUN pip install --upgrade pip \
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Expose necessary ports
-EXPOSE 3030 8080 1935 8554 1234 9000
+EXPOSE 3030 5000 50051 8080 1935 8554 1234 9000
 
 
+# Command to run the Home Assistant add-on
+# CMD ["bash", "run.sh"]

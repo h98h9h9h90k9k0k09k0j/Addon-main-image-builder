@@ -4,10 +4,10 @@ class FFmpegManager:
     def __init__(self):
         self.processes = {}
 
-    def start_stream(self, stream_id, input_url):
+    def start_stream(self, stream_id, input_device = '/dev/video0'):
         command = [
             'ffmpeg',
-            '-i', input_url,
+            '-i', input_device,
             '-f', 'image2pipe',
             '-vcodec', 'mjpeg',
             '-qscale:v', '2',
