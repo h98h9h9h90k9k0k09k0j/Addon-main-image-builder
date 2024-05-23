@@ -1,2 +1,7 @@
 pyyaml
 websockets
+flask
+requests
+grpcio
+grpcio-tools
+protobuf

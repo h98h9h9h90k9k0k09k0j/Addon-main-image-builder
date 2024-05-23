@@ -1,8 +1,32 @@
 import subprocess
-import os
-import signal
-import json
 
+class FFmpegManager:
+    def __init__(self):
+        self.processes = {}
+
+    def start_stream(self, stream_id, input_url):
+        command = [
+            'ffmpeg',
+            '-i', input_url,
+            '-f', 'image2pipe',
+            '-vcodec', 'mjpeg',
+            '-qscale:v', '2',
+            'pipe:1'
+        ]
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=10**8)
+        self.processes[stream_id] = process
+
+    def stop_stream(self, stream_id):
+        if stream_id in self.processes:
+            self.processes[stream_id].terminate()
+            del self.processes[stream_id]
+
+    def get_stream_output(self, stream_id):
+        if stream_id in self.processes:
+            return self.processes[stream_id].stdout.read(1024 * 1024)
+        return None
+
+'''
 class FFmpegManager:
     def __init__(self):
         self.process = None
@@ -46,6 +70,7 @@ class FFmpegManager:
 
     def is_running(self):
         return self.process is not None and self.process.poll() is None
+'''
 
 '''
 # Usage example:
