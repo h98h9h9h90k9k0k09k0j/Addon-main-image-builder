@@ -9,15 +9,19 @@ class ExternalDeviceManager:
         self.video_stub = workloads_pb2_grpc.VideoStreamerStub(self.channel)
         self.task_stub = workloads_pb2_grpc.TaskManagerStub(self.channel)
 
-    def stream_video(self, task_id, ffmpeg_manager):
+    def stream_video(self, task_id, processing_type, ffmpeg_manager):
         def generate_video_chunks():
+            first_chunk = workloads_pb2.VideoChunk(processing_type=processing_type)
+            yield first_chunk
             while True:
                 chunk = ffmpeg_manager.get_stream_output(task_id)
                 if not chunk:
                     break
                 yield workloads_pb2.VideoChunk(data=chunk)
 
-        response = self.video_stub.StreamVideo(generate_video_chunks())
+        response_iterator = self.video_stub.StreamVideo(generate_video_chunks())
+        for response in response_iterator:
+            print(f"Response from server: {response.message}")
         return response
 
     def send_task(self, task_id, task_type, payload):
