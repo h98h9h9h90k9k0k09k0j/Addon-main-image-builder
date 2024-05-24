@@ -19,8 +19,9 @@ message VideoChunk {
 }
 
 // Response message for video stream
-message VideoResponse {
-  string message = 1;
+message VideoChunk {
+  bytes data = 1;
+  string processing_type = 2;  // Added processing_type field
 }
 
 // Message for general task request
