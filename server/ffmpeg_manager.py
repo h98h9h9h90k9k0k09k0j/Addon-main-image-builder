@@ -1,33 +1,54 @@
 import subprocess
+import logging
 
 class FFmpegManager:
     def __init__(self):
         self.processes = {}
 
-    def start_stream(self, stream_id, input_device = '/dev/video0'):
-        command = [
-            'ffmpeg',
-            '-i', input_device,
-            '-f', 'image2pipe',
-            '-vcodec', 'mjpeg',
-            '-qscale:v', '2',
-            'pipe:1'
-        ]
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=10**8)
-        self.processes[stream_id] = process
+    def start_stream(self, stream_id, input_device='/dev/video0'):
+        try:
+            if stream_id in self.processes and self.processes[stream_id].poll() is None:
+                logging.error(f"Stream {stream_id} is already running")
+                return
 
-    
+            command = [
+                'ffmpeg',
+                '-i', input_device,
+                '-f', 'image2pipe',
+                '-vcodec', 'mjpeg',
+                '-qscale:v', '2',
+                'pipe:1'
+            ]
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=10**8)
+            self.processes[stream_id] = process
+            logging.info(f"Started stream {stream_id} with input device {input_device}")
+        except Exception as e:
+            logging.error(f"Failed to start stream {stream_id}: {e}")
+            raise
 
     def stop_stream(self, stream_id):
-        if stream_id in self.processes:
-            self.processes[stream_id].terminate()
-            self.processes[stream_id].process.wait()
-            del self.processes[stream_id]
+        try:
+            if stream_id in self.processes:
+                self.processes[stream_id].terminate()
+                self.processes[stream_id].wait()
+                del self.processes[stream_id]
+                logging.info(f"Stopped stream {stream_id}")
+            else:
+                logging.error(f"Stream {stream_id} does not exist")
+        except Exception as e:
+            logging.error(f"Failed to stop stream {stream_id}: {e}")
+            raise
 
     def get_stream_output(self, stream_id):
-        if stream_id in self.processes:
-            return self.processes[stream_id].stdout.read(1024 * 1024)
-        return None
+        try:
+            if stream_id in self.processes:
+                return self.processes[stream_id].stdout.read(1024 * 1024)
+            else:
+                logging.error(f"Stream {stream_id} does not exist")
+                return None
+        except Exception as e:
+            logging.error(f"Failed to get stream output for {stream_id}: {e}")
+            raise
 
 
 

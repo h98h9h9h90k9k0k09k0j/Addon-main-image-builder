@@ -15,27 +15,48 @@ class ExternalDeviceManager:
         self.processing_type = "motion_detection"
 
     def stream_video(self, task_id, ffmpeg_manager):
-        def generate_video_chunks():
-            first_chunk = workloads_pb2.VideoChunk(processing_type=self.processing_type)
-            yield first_chunk
-            while True:
-                chunk = ffmpeg_manager.get_stream_output(task_id)
-                if not chunk:
-                    break
-                yield workloads_pb2.VideoChunk(data=chunk)
+        try:
+            def generate_video_chunks():
+                first_chunk = workloads_pb2.VideoChunk(processing_type=self.processing_type)
+                yield first_chunk
+                while True:
+                    chunk = ffmpeg_manager.get_stream_output(task_id)
+                    if not chunk:
+                        break
+                    yield workloads_pb2.VideoChunk(data=chunk)
 
-        response_iterator = self.video_stub.StreamVideo(generate_video_chunks())
-        for response in response_iterator:
-            logging.info(f"Response from server: {MessageToDict(response)}")
+            response_iterator = self.video_stub.StreamVideo(generate_video_chunks())
+            for response in response_iterator:
+                logging.info(f"Response from server: {MessageToDict(response)}")
+        except grpc.RpcError as e:
+            logging.error(f"gRPC error during video streaming: {e}")
+            raise
+        except Exception as e:
+            logging.error(f"Error during video streaming: {e}")
+            raise
 
     def send_task(self, task_id, task_type, payload):
-        request = workloads_pb2.TaskRequest(task_id=task_id, task_type=task_type, payload=payload)
-        response = self.task_stub.SendTask(request)
-        return response
+        try:
+            request = workloads_pb2.TaskRequest(task_id=task_id, task_type=task_type, payload=payload)
+            response = self.task_stub.SendTask(request)
+            return response
+        except grpc.RpcError as e:
+            logging.error(f"gRPC error during sending task: {e}")
+            raise
+        except Exception as e:
+            logging.error(f"Error during sending task: {e}")
+            raise
 
     def stream_task(self, task_id, data_chunks):
-        def generate_task_chunks():
-            for chunk in data_chunks:
-                yield workloads_pb2.TaskChunk(data=chunk, task_id=task_id)
-        response = self.task_stub.StreamTask(generate_task_chunks())
-        return response
+        try:
+            def generate_task_chunks():
+                for chunk in data_chunks:
+                    yield workloads_pb2.TaskChunk(data=chunk, task_id=task_id)
+            response = self.task_stub.StreamTask(generate_task_chunks())
+            return response
+        except grpc.RpcError as e:
+            logging.error(f"gRPC error during task streaming: {e}")
+            raise
+        except Exception as e:
+            logging.error(f"Error during task streaming: {e}")
+            raise
