@@ -16,12 +16,12 @@ service TaskManager {
 // Message for video chunk data
 message VideoChunk {
   bytes data = 1;
+  string processing_type = 2;  // Added processing_type field
 }
 
 // Response message for video stream
-message VideoChunk {
-  bytes data = 1;
-  string processing_type = 2;  // Added processing_type field
+message VideoResponse {
+  string message = 1;
 }
 
 // Message for general task request

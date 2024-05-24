@@ -13,8 +13,8 @@ class FrontendManager:
             data = request.get_json()
             task_id = data['task_id']
             client_id = data['client_id']
-            status = self.distribution_manager.start_task(task_id, 'video_stream', client_id)
-            return jsonify({'message': 'Stream started', 'status': MessageToDict(status)}), 200
+            self.distribution_manager.start_task(task_id, 'video_stream', client_id)
+            return jsonify({'message': 'Stream started'}), 200
 
         @self.app.route('/stop_stream', methods=['POST'])
         def stop_stream():

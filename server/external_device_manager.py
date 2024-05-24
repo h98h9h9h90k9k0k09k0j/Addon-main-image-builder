@@ -2,6 +2,7 @@ import logging
 import grpc
 import workloads_pb2
 import workloads_pb2_grpc
+from google.protobuf.json_format import MessageToDict
 
 class ExternalDeviceManager:
     logging.basicConfig(level=logging.INFO)
@@ -25,8 +26,7 @@ class ExternalDeviceManager:
 
         response_iterator = self.video_stub.StreamVideo(generate_video_chunks())
         for response in response_iterator:
-            logging.info(f"Response from server: {response.message}")
-        return response
+            logging.info(f"Response from server: {MessageToDict(response)}")
 
     def send_task(self, task_id, task_type, payload):
         request = workloads_pb2.TaskRequest(task_id=task_id, task_type=task_type, payload=payload)
