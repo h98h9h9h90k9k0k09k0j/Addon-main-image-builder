@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from google.protobuf.json_format import MessageToDict
 
 class FrontendManager:
     def __init__(self, distribution_manager):
@@ -11,10 +12,9 @@ class FrontendManager:
         def start_stream():
             data = request.get_json()
             task_id = data['task_id']
-            input_url = data['input_url']
             client_id = data['client_id']
-            self.distribution_manager.start_task(task_id, 'video_stream', input_url, client_id)
-            return jsonify({'message': 'Stream started'}), 200
+            status = self.distribution_manager.start_task(task_id, 'video_stream', client_id)
+            return jsonify({'message': 'Stream started', 'status': MessageToDict(status)}), 200
 
         @self.app.route('/stop_stream', methods=['POST'])
         def stop_stream():

@@ -25,14 +25,14 @@ class DistributionManager:
                     'type': task_type,
                     'client_id': client_id
                 }
-                self.external_devices[client_id].stream_video(task_id, self.ffmpeg_manager)
+                return self.external_devices[client_id].stream_video(task_id, self.ffmpeg_manager)
         else:
             if client_id in self.external_devices:
                 self.tasks[task_id] = {
                     'type': task_type,
                     'client_id': client_id
                 }
-                self.external_devices[client_id].send_task(task_id, task_type)  
+                return self.external_devices[client_id].send_task(task_id, task_type)  
 
     def stop_task(self, task_id):
         if task_id in self.tasks:
