@@ -16,9 +16,12 @@ class FFmpegManager:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=10**8)
         self.processes[stream_id] = process
 
+    
+
     def stop_stream(self, stream_id):
         if stream_id in self.processes:
             self.processes[stream_id].terminate()
+            self.processes[stream_id].process.wait()
             del self.processes[stream_id]
 
     def get_stream_output(self, stream_id):
@@ -26,7 +29,29 @@ class FFmpegManager:
             return self.processes[stream_id].stdout.read(1024 * 1024)
         return None
 
+
+
 '''
+'-vcodec', 'mjpeg',
+            '-qscale:v', '2',
+            def start_stream(self, stream_id, input_device = '/dev/video0', codec='libx264', additional_flags=None):
+        ffmpeg_base_cmd = [
+            'ffmpeg',
+            '-f', 'v4l2',       # Input format: Video4Linux2 for USB cameras
+            '-i', input_device,  # Input device
+            '-c:v', codec,       # Video codec
+            '-f', 'image2pipe',    # Output format: raw video
+            'pipe:1'             # Output to stdout
+        ]
+        if additional_flags:
+            ffmpeg_base_cmd.extend(additional_flags)
+
+        self.ffmpeg_cmd = ffmpeg_base_cmd
+        print(f"Starting FFmpeg with command: {' '.join(self.ffmpeg_cmd)}")
+        process = subprocess.Popen(self.ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=10**8)
+        self.processes[stream_id] = process
+
+
 class FFmpegManager:
     def __init__(self):
         self.process = None
