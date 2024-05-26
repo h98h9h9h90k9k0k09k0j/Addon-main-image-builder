@@ -12,7 +12,7 @@ class ExternalDeviceManager:
         self.channel = grpc.insecure_channel(address)
         self.video_stub = workloads_pb2_grpc.VideoStreamerStub(self.channel)
         self.task_stub = workloads_pb2_grpc.TaskManagerStub(self.channel)
-        self.processing_type = "motion_detection"
+        self.processing_type = "face_recognition"
 
     def stream_video(self, task_id, ffmpeg_manager):
         try:
