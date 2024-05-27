@@ -1,7 +1,9 @@
+import logging
 from distribution_manager import DistributionManager
 from frontend_manager import FrontendManager
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     distribution_manager = DistributionManager()
     frontend_manager = FrontendManager(distribution_manager)
 

@@ -7,6 +7,7 @@ class DistributionManager:
         self.ffmpeg_manager = FFmpegManager()
         self.external_devices = {}
         self.tasks = {}
+        logging.basicConfig(level=logging.INFO)
 
     def add_client(self, client_id, address):
         try:
@@ -30,13 +31,24 @@ class DistributionManager:
     def list_clients(self):
         return list(self.external_devices.keys())
 
-    def start_task(self, task_id, task_type, processing_mode):
+    def start_task(self, task_id, task_type):
         try:
             if task_type == 'video_local':
                 self.ffmpeg_manager.start_stream(task_id)
                 video_processor = VideoProcessor()
                 logging.info(f"Starting video local task {task_id}")
-                video_processor.process_video(task_id, self.ffmpeg_manager, processing_mode)
+                try:
+                    for frame in self.ffmpeg_manager.read_frames(task_id):
+                        if not video_processor.process_frame(frame):
+                            break
+                finally:
+                    self.ffmpeg_manager.stop_stream(task_id)
+                video_processor.process_video(task_id)
+                self.tasks[task_id] = {
+                    'type': task_type,
+                    'processor': video_processor
+                }
+            logging.info(f"Task {task_id} started")
         except Exception as e:
             logging.error(f"Failed to start task {task_id}: {e}")
             raise
@@ -44,8 +56,9 @@ class DistributionManager:
     def stop_task(self, task_id):
         try:
             if task_id in self.tasks:
-                task_type = self.tasks[task_id]['type']
-                if task_type == 'video_stream':
+                task_info = self.tasks[task_id]
+                task_type = task_info['type']
+                if task_type == 'video_local':
                     self.ffmpeg_manager.stop_stream(task_id)
                 del self.tasks[task_id]
                 logging.info(f"Stopped task {task_id}")

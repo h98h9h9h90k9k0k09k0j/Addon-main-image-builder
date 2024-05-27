@@ -3,10 +3,11 @@ websockets
 flask
 requests
 numpy
+Pillow
+psutil
+aiofiles
+h5py
 opencv-python-headless
 opencv-contrib-python-headless
 deepface
-tf_keras
-psutil
-aiofiles
-Pillow
+tensorflow==2.16.1

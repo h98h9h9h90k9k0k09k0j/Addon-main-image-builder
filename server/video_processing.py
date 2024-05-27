@@ -1,13 +1,11 @@
 import datetime
 import logging
 import os
-import time
-from concurrent import futures
+import threading
+import queue
 import cv2
 import numpy as np
 from deepface import DeepFace
-import threading
-import queue
 from PIL import Image
 
 class VideoProcessor:
@@ -29,43 +27,31 @@ class VideoProcessor:
             self.max_saved_images = 100  # Limit the number of saved images
             self.recognizer_trained = False
             self.train_recognizer()
+            logging.basicConfig(level=logging.INFO)
         except Exception as e:
             logging.error(f"Initialization error: {e}")
             raise
 
-    def process_video(self, task_id, ffmpeg_manager, processing_type):
+    def process_video(self, frame):
         try:
-            while True:
-                    chunk = ffmpeg_manager.get_stream_output(task_id)
-                    if not chunk:
-                        break
-                    buffer += chunk.data
-                    start = 0
-                    while True:
-                        start = buffer.find(b'\xff\xd8', start)
-                        end = buffer.find(b'\xff\xd9', start)
-                        if start != -1 and end != -1:
-                            jpg = buffer[start:end+2]
-                            buffer = buffer[end+2:]
-                            frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
-                            if frame is not None:
-                                logging.info("Frame read correctly")
-                                #yield workloads_pb2.VideoResponse(message="Frame received correctly")
-                                self.frame_queue.put((frame, processing_type))
-                                if not self.processing:
-                                    self.processing = True
-                                    threading.Thread(target=self.process_frames).start()
-                                else:
-                                    break
-                            else:
-                                break
+            img_array = np.frombuffer(frame, dtype=np.uint8)
+            img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+            if img is not None:
+                logging.info("Frame read correctly")
+                self.frame_queue.put(frame)
+                if not self.processing:
+                    self.processing = True
+                    threading.Thread(target=self.process_frames).start()
+                else:
+                    logging.warning("Frame decoding returned None")
         except Exception as e:
-            logging.error(f"Error in StreamVideo method: {e}")
-            #yield workloads_pb2.VideoResponse(message="StreamVideo method error")
+            logging.error(f"Failed to process frame: {e}")
+            return False
 
     def process_frames(self):
+        processing_type = 'motion_detection'
         while not self.frame_queue.empty():
-            frame, processing_type = self.frame_queue.get()
+            frame = self.frame_queue.get()
             if processing_type == 'face_recognition':
                 result_message = self.face_recognition(frame)
             elif processing_type == 'motion_detection':
@@ -75,7 +61,6 @@ class VideoProcessor:
 
             if result_message:
                 logging.info(f"Processed frame result: {result_message}")
-                # Handle sending response back to the client if needed
         self.processing = False
 
     def face_recognition(self, frame):
@@ -162,7 +147,6 @@ class VideoProcessor:
                             face_samples.append(img_numpy[y:y + h, x:x + w])
                             ids.append(face_id)
         return face_samples, ids
-
 
     def motion_detection(self, frame):
         try:

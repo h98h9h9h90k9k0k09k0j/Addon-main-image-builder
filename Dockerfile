@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     python3-tk \
     libffi-dev \
     libssl-dev \
+    python3-opencv \
     libopencv-dev \
     python3.11-venv \
     git \
@@ -24,13 +25,15 @@ RUN apt-get update && apt-get install -y \
     libatlas-base-dev \
     gfortran \
     ffmpeg && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Copy data for add-on
-COPY . /app
+# Copy only the requirements file to leverage Docker cache
+COPY requirements.txt /app/requirements.txt
+
 
 # Create a virtual environment in the /opt/venv directory
 RUN python3 -m venv /opt/venv 
@@ -41,6 +44,11 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Install Python packages in the virtual environment
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
+
+RUN pip install --no-cache-dir tf_keras
+
+# Copy data for add-on
+COPY . /app
 
 
 # Use bash for running commands

@@ -39,15 +39,30 @@ class FFmpegManager:
             logging.error(f"Failed to stop stream {stream_id}: {e}")
             raise
 
-    def get_stream_output(self, stream_id):
+    def read_frames(self, stream_id):
         try:
             if stream_id in self.processes:
-                return self.processes[stream_id].stdout.read(1024 * 1024)
+                buffer = b""
+                while True:
+                    chunk = self.processes[stream_id].stdout.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    buffer += chunk
+                    start = 0
+                    while True:
+                        start = buffer.find(b'\xff\xd8', start)
+                        end = buffer.find(b'\xff\xd9', start)
+                        if start != -1 and end != -1:
+                            jpg = buffer[start:end+2]
+                            buffer = buffer[end+2:]
+                            yield jpg
+                        else:
+                            break
             else:
                 logging.error(f"Stream {stream_id} does not exist")
                 return None
         except Exception as e:
-            logging.error(f"Failed to get stream output for {stream_id}: {e}")
+            logging.error(f"Failed to read frames for stream {stream_id}: {e}")
             raise
 
 
