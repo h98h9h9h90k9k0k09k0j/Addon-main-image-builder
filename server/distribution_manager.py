@@ -5,6 +5,7 @@ from video_processing import VideoProcessor
 class DistributionManager:
     def __init__(self):
         self.ffmpeg_manager = FFmpegManager()
+        self.videoProcessor = VideoProcessor()
         self.external_devices = {}
         self.tasks = {}
         logging.basicConfig(level=logging.INFO)
@@ -34,19 +35,17 @@ class DistributionManager:
     def start_task(self, task_id, task_type):
         try:
             if task_type == 'video_local':
-                self.ffmpeg_manager.start_stream(task_id)
-                video_processor = VideoProcessor()
+                self.ffmpeg_manager.start_stream()
                 logging.info(f"Starting video local task {task_id}")
                 try:
-                    for frame in self.ffmpeg_manager.read_frames(task_id):
-                        if not video_processor.process_frame(frame):
+                    for frame in self.ffmpeg_manager.read_frames():
+                        if not self.videoProcessor.process_frame(frame):
                             break
+                except Exception as e:
+                    logging.error(f"Error occurred during video local task {task_id}: {e}")
                 finally:
-                    self.ffmpeg_manager.stop_stream(task_id)
-                self.tasks[task_id] = {
-                    'type': task_type,
-                    'processor': video_processor
-                }
+                    logging.info(f"Stopped video local task {task_id}")
+                    self.ffmpeg_manager.stop_stream()
                 logging.info(f"Task {task_id} started")
             else:
                 logging.warning(f"Unsupported task type {task_type}")

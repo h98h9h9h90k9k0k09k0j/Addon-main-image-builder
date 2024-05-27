@@ -3,14 +3,11 @@ import logging
 
 class FFmpegManager:
     def __init__(self):
-        self.processes = {}
+        #self.processes = {}
+        self.process = None
 
-    def start_stream(self, stream_id, input_device='/dev/video0'):
+    def start_stream(self, input_device='/dev/video0'):
         try:
-            if stream_id in self.processes and self.processes[stream_id].poll() is None:
-                logging.error(f"Stream {stream_id} is already running")
-                return
-
             command = [
                 'ffmpeg',
                 '-i', input_device,
@@ -19,50 +16,42 @@ class FFmpegManager:
                 '-qscale:v', '2',
                 'pipe:1'
             ]
-            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=10**8)
-            self.processes[stream_id] = process
-            logging.info(f"Started stream {stream_id} with input device {input_device}")
+            self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=10**8)
+            logging.info(f"Started stream with input device {input_device}")
         except Exception as e:
-            logging.error(f"Failed to start stream {stream_id}: {e}")
+            logging.error(f"Failed to start stream: {e}")
             raise
 
-    def stop_stream(self, stream_id):
+    def stop_stream(self):
         try:
-            if stream_id in self.processes:
-                self.processes[stream_id].terminate()
-                self.processes[stream_id].wait()
-                del self.processes[stream_id]
-                logging.info(f"Stopped stream {stream_id}")
-            else:
-                logging.error(f"Stream {stream_id} does not exist")
+            self.process.terminate()
+            self.process.wait()
+            self.process = None
+            logging.info(f"Stopped stream ")
         except Exception as e:
-            logging.error(f"Failed to stop stream {stream_id}: {e}")
+            logging.error(f"Failed to stop stream : {e}")
             raise
 
-    def read_frames(self, stream_id):
+    def read_frames(self):
         try:
-            if stream_id in self.processes:
-                buffer = b""
+            buffer = b""
+            while True:
+                chunk = self.process.stdout.read(1024 * 1024)
+                if not chunk:
+                    break
+                buffer += chunk
+                start = 0
                 while True:
-                    chunk = self.processes[stream_id].stdout.read(1024 * 1024)
-                    if not chunk:
+                    start = buffer.find(b'\xff\xd8', start)
+                    end = buffer.find(b'\xff\xd9', start)
+                    if start != -1 and end != -1:
+                        jpg = buffer[start:end+2]
+                        buffer = buffer[end+2:]
+                        yield jpg
+                    else:
                         break
-                    buffer += chunk
-                    start = 0
-                    while True:
-                        start = buffer.find(b'\xff\xd8', start)
-                        end = buffer.find(b'\xff\xd9', start)
-                        if start != -1 and end != -1:
-                            jpg = buffer[start:end+2]
-                            buffer = buffer[end+2:]
-                            yield jpg
-                        else:
-                            break
-            else:
-                logging.error(f"Stream {stream_id} does not exist")
-                return None
         except Exception as e:
-            logging.error(f"Failed to read frames for stream {stream_id}: {e}")
+            logging.error(f"Failed to read frames for stream: {e}")
             raise
 
 
