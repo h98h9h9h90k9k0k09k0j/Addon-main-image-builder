@@ -1,6 +1,6 @@
 import logging
 from ffmpeg_manager import FFmpegManager
-from external_device_manager import ExternalDeviceManager
+from video_processing import VideoProcessor
 
 class DistributionManager:
     def __init__(self):
@@ -10,7 +10,7 @@ class DistributionManager:
 
     def add_client(self, client_id, address):
         try:
-            self.external_devices[client_id] = ExternalDeviceManager(address)
+            self.external_devices[client_id] = address
             logging.info(f"Client {client_id} added with address {address}")
         except Exception as e:
             logging.error(f"Failed to add client {client_id}: {e}")
@@ -41,6 +41,12 @@ class DistributionManager:
                     }
                     self.external_devices[client_id].stream_video(task_id, self.ffmpeg_manager)
                     logging.info(f"Started video stream task {task_id} for client {client_id}")
+            elif task_type == 'video_local':
+                self.ffmpeg_manager.start_stream(task_id)
+                video_processor = VideoProcessor()
+                logging.info(f"Starting video local task {task_id}")
+                video_processor.process_video(task_id, self.ffmpeg_manager)
+            
             else:
                 if client_id in self.external_devices:
                     self.tasks[task_id] = {

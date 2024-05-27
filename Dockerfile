@@ -6,25 +6,25 @@ FROM ghcr.io/home-assistant/aarch64-base-debian:bookworm
 
 # Install Python and necessary build dependencies
 RUN apt-get update && apt-get install -y \
-    python3.11 \
+    python3 \
     python3-pip \
-    python3.11-dev \
+    python3-dev \
+    python3-tk \
     libffi-dev \
     libssl-dev \
     libopencv-dev \
     python3.11-venv \
     git \
     dos2unix \
-    curl \
+    libgtk2.0-dev \
+    build-essential \
+    libhdf5-dev \
+    libhdf5-serial-dev \
+    hdf5-tools \
+    libatlas-base-dev \
+    gfortran \
     ffmpeg && \
-    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Download and install MediaMTX
-RUN curl -L -o mediamtx.tar.gz https://github.com/bluenviron/mediamtx/releases/download/v1.8.1/mediamtx_v1.8.1_linux_arm64v8.tar.gz; \
-    tar -xzf mediamtx.tar.gz && \
-    mv mediamtx /usr/local/bin/mediamtx \
-    && chmod a+x /usr/local/bin/mediamtx
 
 # Set working directory
 WORKDIR /app
@@ -47,7 +47,7 @@ RUN pip install --upgrade pip \
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Expose necessary ports
-EXPOSE 3030 5000 50051 8080 1935 8554 1234 9000
+EXPOSE 3030 5000 50051
 
 
 # Command to run the Home Assistant add-on

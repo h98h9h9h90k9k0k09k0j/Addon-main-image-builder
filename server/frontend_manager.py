@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import logging
-from google.protobuf.json_format import MessageToDict
 
 class FrontendManager:
     def __init__(self, distribution_manager):
@@ -15,7 +14,7 @@ class FrontendManager:
                 data = request.get_json()
                 task_id = data['task_id']
                 client_id = data['client_id']
-                self.distribution_manager.start_task(task_id, 'video_stream', client_id)
+                self.distribution_manager.start_task(task_id, 'video_local', client_id)
                 return jsonify({'message': 'Stream started'}), 200
             except KeyError as e:
                 logging.error(f"KeyError: {e}")

@@ -2,6 +2,11 @@ pyyaml
 websockets
 flask
 requests
-grpcio
-grpcio-tools
-protobuf
+numpy
+opencv-python-headless
+opencv-contrib-python-headless
+deepface
+tf_keras
+psutil
+aiofiles
+Pillow
