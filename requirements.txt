@@ -6,8 +6,7 @@ numpy
 Pillow
 psutil
 aiofiles
-h5py
 opencv-python-headless
 opencv-contrib-python-headless
 deepface
-tensorflow==2.16.1
+tf_keras

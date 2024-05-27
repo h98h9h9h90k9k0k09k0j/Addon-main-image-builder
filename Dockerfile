@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libssl-dev \
     python3-opencv \
-    libopencv-dev \
+    #libopencv-dev \
     python3.11-venv \
     git \
     dos2unix \
@@ -44,8 +44,6 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Install Python packages in the virtual environment
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
-
-RUN pip install --no-cache-dir tf_keras
 
 # Copy data for add-on
 COPY . /app
