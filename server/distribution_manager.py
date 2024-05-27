@@ -30,31 +30,13 @@ class DistributionManager:
     def list_clients(self):
         return list(self.external_devices.keys())
 
-    def start_task(self, task_id, task_type, client_id):
+    def start_task(self, task_id, task_type, processing_mode):
         try:
-            if task_type == 'video_stream':
-                self.ffmpeg_manager.start_stream(task_id)
-                if client_id in self.external_devices:
-                    self.tasks[task_id] = {
-                        'type': task_type,
-                        'client_id': client_id
-                    }
-                    self.external_devices[client_id].stream_video(task_id, self.ffmpeg_manager)
-                    logging.info(f"Started video stream task {task_id} for client {client_id}")
-            elif task_type == 'video_local':
+            if task_type == 'video_local':
                 self.ffmpeg_manager.start_stream(task_id)
                 video_processor = VideoProcessor()
                 logging.info(f"Starting video local task {task_id}")
-                video_processor.process_video(task_id, self.ffmpeg_manager)
-            
-            else:
-                if client_id in self.external_devices:
-                    self.tasks[task_id] = {
-                        'type': task_type,
-                        'client_id': client_id
-                    }
-                    self.external_devices[client_id].send_task(task_id, task_type)
-                    logging.info(f"Started task {task_id} of type {task_type} for client {client_id}")
+                video_processor.process_video(task_id, self.ffmpeg_manager, processing_mode)
         except Exception as e:
             logging.error(f"Failed to start task {task_id}: {e}")
             raise
