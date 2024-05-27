@@ -32,18 +32,20 @@ class VideoProcessor:
             logging.error(f"Initialization error: {e}")
             raise
 
-    def process_video(self, frame):
+    def process_frame(self, frame_bytes):
         try:
-            img_array = np.frombuffer(frame, dtype=np.uint8)
+            img_array = np.frombuffer(frame_bytes, dtype=np.uint8)
             img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
             if img is not None:
                 logging.info("Frame read correctly")
-                self.frame_queue.put(frame)
+                self.frame_queue.put(img)
                 if not self.processing:
                     self.processing = True
                     threading.Thread(target=self.process_frames).start()
-                else:
-                    logging.warning("Frame decoding returned None")
+                return True
+            else:
+                logging.warning("Frame decoding returned None")
+                return False
         except Exception as e:
             logging.error(f"Failed to process frame: {e}")
             return False

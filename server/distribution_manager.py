@@ -43,12 +43,13 @@ class DistributionManager:
                             break
                 finally:
                     self.ffmpeg_manager.stop_stream(task_id)
-                video_processor.process_video(task_id)
                 self.tasks[task_id] = {
                     'type': task_type,
                     'processor': video_processor
                 }
-            logging.info(f"Task {task_id} started")
+                logging.info(f"Task {task_id} started")
+            else:
+                logging.warning(f"Unsupported task type {task_type}")
         except Exception as e:
             logging.error(f"Failed to start task {task_id}: {e}")
             raise
