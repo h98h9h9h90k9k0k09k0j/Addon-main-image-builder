@@ -37,7 +37,7 @@ class VideoProcessor:
             img_array = np.frombuffer(frame_bytes, dtype=np.uint8)
             img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
             if img is not None:
-                logging.info("Frame read correctly")
+                #logging.info("Frame read correctly")
                 self.frame_queue.put(img)
                 if not self.processing:
                     self.processing = True
@@ -51,7 +51,7 @@ class VideoProcessor:
             return False
 
     def process_frames(self):
-        processing_type = 'motion_detection'
+        processing_type = 'face_recognition'
         while not self.frame_queue.empty():
             frame = self.frame_queue.get()
             if processing_type == 'face_recognition':
@@ -62,7 +62,8 @@ class VideoProcessor:
                 result_message = self.emotion_recognition(frame)
 
             if result_message:
-                logging.info(f"Processed frame result: {result_message}")
+                pass
+                #logging.info(f"Processed frame result: {result_message}")
         self.processing = False
 
     def face_recognition(self, frame):
