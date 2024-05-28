@@ -16,15 +16,15 @@ class VideoProcessor:
             self.current_path = ""
             self.count = 0
             self.lock = threading.Lock()
-            self.frame_queue = queue.Queue()  # Queue for frame handling
-            self.processing = False  # Flag to indicate if processing is ongoing
+            self.frame_queue = queue.Queue(maxsize=30)  # Limit the queue size
+            self.processing = False
             self.recognizer = cv2.face.LBPHFaceRecognizer_create()
             self.face_database_path = 'dataset'
             os.makedirs(self.face_database_path, exist_ok=True)
             self.trainer_file_path = os.path.join(self.face_database_path, 'trainer.yml')
             self.motion_detection_path = "img_motion_det"
             os.makedirs(self.motion_detection_path, exist_ok=True)
-            self.max_saved_images = 100  # Limit the number of saved images
+            self.max_saved_images = 100
             self.recognizer_trained = False
             self.train_recognizer()
             logging.basicConfig(level=logging.INFO)
@@ -37,7 +37,6 @@ class VideoProcessor:
             img_array = np.frombuffer(frame_bytes, dtype=np.uint8)
             img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
             if img is not None:
-                #logging.info("Frame read correctly")
                 self.frame_queue.put(img)
                 if not self.processing:
                     self.processing = True
@@ -62,8 +61,7 @@ class VideoProcessor:
                 result_message = self.emotion_recognition(frame)
 
             if result_message:
-                pass
-                #logging.info(f"Processed frame result: {result_message}")
+                logging.info(f"Processed frame result: {result_message}")
         self.processing = False
 
     def face_recognition(self, frame):
@@ -75,7 +73,7 @@ class VideoProcessor:
                 if self.recognizer_trained:
                     id, confidence = self.recognizer.predict(gray[y:y + h, x:x + w])
 
-                    if confidence < 50:  # Adjust confidence threshold for better accuracy
+                    if confidence < 50:
                         confidence_text = f"{round(100 - confidence)}%"
                         name = f"User {id}"
                     else:
@@ -91,7 +89,7 @@ class VideoProcessor:
                             face_id = self.count
                             user_dir = f"{self.face_database_path}/User_{face_id}"
                             os.makedirs(user_dir, exist_ok=True)
-                            for i in range(5):  # Capture multiple images for better training
+                            for i in range(5):
                                 face_path = f"{user_dir}/User.{face_id}.{i + 1}.jpg"
                                 cv2.imwrite(face_path, gray[y:y + h, x:x + w])
                             self.train_recognizer()
@@ -103,7 +101,7 @@ class VideoProcessor:
                         face_id = self.count
                         user_dir = f"{self.face_database_path}/User_{face_id}"
                         os.makedirs(user_dir, exist_ok=True)
-                        for i in range(5):  # Capture multiple images for better training
+                        for i in range(5):
                             face_path = f"{user_dir}/User.{face_id}.{i + 1}.jpg"
                             cv2.imwrite(face_path, gray[y:y + h, x:x + w])
                         self.train_recognizer()
@@ -119,7 +117,6 @@ class VideoProcessor:
             return "Face recognition error"
         
     def train_recognizer(self):
-        # Train the face recognizer with images in the dataset
         try:
             face_samples, ids = self.get_images_and_labels(self.face_database_path)
             if len(face_samples) > 0:
@@ -142,7 +139,7 @@ class VideoProcessor:
                 for image_name in os.listdir(user_path):
                     if image_name.endswith('.jpg'):
                         image_path = os.path.join(user_path, image_name)
-                        pil_img = Image.open(image_path).convert('L')  # convert it to grayscale
+                        pil_img = Image.open(image_path).convert('L')
                         img_numpy = np.array(pil_img, 'uint8')
                         face_id = int(user_dir.split('_')[-1])
                         faces = self.faceCascade.detectMultiScale(img_numpy)
@@ -182,7 +179,6 @@ class VideoProcessor:
             return "Motion detection error"
 
     def cleanup_old_images(self, directory):
-        # Remove old images if the total number exceeds the max_saved_images
         image_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.jpg')]
         if len(image_files) > self.max_saved_images:
             image_files.sort(key=os.path.getctime)
@@ -207,6 +203,3 @@ class VideoProcessor:
         except Exception as e:
             logging.error(f"Error in emotion_recognition method: {e}")
             return "Emotion recognition error"
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
