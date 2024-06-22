@@ -9,10 +9,25 @@ class ExternalDeviceManager:
     
     def __init__(self, address):
         self.address = address
-        self.channel = grpc.insecure_channel(address)
-        self.video_stub = workloads_pb2_grpc.VideoStreamerStub(self.channel)
-        self.task_stub = workloads_pb2_grpc.TaskManagerStub(self.channel)
+        self.channel = None
+        self.video_stub = None
+        self.task_stub = None
         self.processing_type = "motion_detection"
+        self.connect()
+
+    def connect(self):
+        try:
+            self.channel = grpc.insecure_channel(self.address)
+            self.video_stub = workloads_pb2_grpc.VideoStreamerStub(self.channel)
+            self.task_stub = workloads_pb2_grpc.TaskManagerStub(self.channel)
+            logging.info(f"Connected to gRPC server at {self.address}")
+        except Exception as e:
+            logging.error(f"Failed to connect to gRPC server: {e}")
+            raise
+
+    def reconnect(self):
+        logging.info("Reconnecting to gRPC server...")
+        self.connect()
 
     def stream_video(self, task_id, ffmpeg_manager):
         try:
@@ -23,7 +38,7 @@ class ExternalDeviceManager:
                     chunk = ffmpeg_manager.get_stream_output(task_id)
                     if not chunk:
                         break
-                    yield workloads_pb2.VideoChunk(data=chunk)
+                    yield workloads_pb2.VideoChunk(data=chunk, processing_type=self.processing_type)
 
             response_iterator = self.video_stub.StreamVideo(generate_video_chunks())
             for response in response_iterator:
@@ -35,7 +50,7 @@ class ExternalDeviceManager:
             logging.error(f"Error during video streaming: {e}")
             raise
 
-    def send_task(self, task_id, task_type, payload):
+    def send_task(self, task_id, task_type, payload=""):
         try:
             request = workloads_pb2.TaskRequest(task_id=task_id, task_type=task_type, payload=payload)
             response = self.task_stub.SendTask(request)
@@ -47,16 +62,28 @@ class ExternalDeviceManager:
             logging.error(f"Error during sending task: {e}")
             raise
 
-    def stream_task(self, task_id, data_chunks):
+    def retrieve_frames(self):
         try:
-            def generate_task_chunks():
-                for chunk in data_chunks:
-                    yield workloads_pb2.TaskChunk(data=chunk, task_id=task_id)
-            response = self.task_stub.StreamTask(generate_task_chunks())
-            return response
+            request = workloads_pb2.TaskRequest(task_id="retrieve_frames", task_type="retrieve_frames", payload="")
+            response = self.task_stub.RetrieveFrames(request)
+            frames = []
+            for frame_data in response.frames:
+                frames.append({
+                    "image": frame_data.image,
+                    "timestamp": frame_data.timestamp
+                })
+            return frames
         except grpc.RpcError as e:
-            logging.error(f"gRPC error during task streaming: {e}")
+            logging.error(f"gRPC error during retrieving frames: {e}")
             raise
         except Exception as e:
-            logging.error(f"Error during task streaming: {e}")
+            logging.error(f"Error during retrieving frames: {e}")
+            raise
+
+    def update_processing_type(self, processing_type):
+        try:
+            self.processing_type = processing_type
+            logging.info(f"Updated processing type to {processing_type}")
+        except Exception as e:
+            logging.error(f"Failed to update processing type: {e}")
             raise

@@ -20,12 +20,6 @@ RUN apt-get update && apt-get install -y \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Download and install MediaMTX
-RUN curl -L -o mediamtx.tar.gz https://github.com/bluenviron/mediamtx/releases/download/v1.8.1/mediamtx_v1.8.1_linux_arm64v8.tar.gz; \
-    tar -xzf mediamtx.tar.gz && \
-    mv mediamtx /usr/local/bin/mediamtx \
-    && chmod a+x /usr/local/bin/mediamtx
-
 # Set working directory
 WORKDIR /app
 

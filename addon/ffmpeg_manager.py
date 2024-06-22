@@ -38,6 +38,11 @@ class FFmpegManager:
         except Exception as e:
             logging.error(f"Failed to stop stream {stream_id}: {e}")
             raise
+        finally:
+            # Ensure process is terminated and removed
+            if stream_id in self.processes:
+                self.processes[stream_id].kill()
+                del self.processes[stream_id]
 
     def get_stream_output(self, stream_id):
         try:

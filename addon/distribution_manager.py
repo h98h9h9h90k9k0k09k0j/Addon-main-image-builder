@@ -7,6 +7,7 @@ class DistributionManager:
         self.ffmpeg_manager = FFmpegManager()
         self.external_devices = {}
         self.tasks = {}
+        self.alerts = []
 
     def add_client(self, client_id, address):
         try:
@@ -31,6 +32,9 @@ class DistributionManager:
         return list(self.external_devices.keys())
 
     def start_task(self, task_id, task_type, client_id):
+        if client_id not in self.external_devices:
+            logging.error(f"Invalid client ID: {client_id}")
+            return
         try:
             if task_type == 'video_stream':
                 self.ffmpeg_manager.start_stream(task_id)
@@ -54,6 +58,9 @@ class DistributionManager:
             raise
 
     def stop_task(self, task_id):
+        if task_id not in self.tasks:
+            logging.warning(f"Task {task_id} does not exist")
+            return
         try:
             if task_id in self.tasks:
                 task_type = self.tasks[task_id]['type']
@@ -70,10 +77,46 @@ class DistributionManager:
     def update_task_settings(self, task_id, settings):
         try:
             if task_id in self.tasks:
-                # Implement settings update logic
+                client_id = self.tasks[task_id]['client_id']
+                if 'processing_type' in settings and client_id in self.external_devices:
+                    self.external_devices[client_id].update_processing_type(settings['processing_type'])
                 logging.info(f"Updated settings for task {task_id} with settings {settings}")
             else:
                 logging.warning(f"Task {task_id} does not exist")
         except Exception as e:
             logging.error(f"Failed to update settings for task {task_id}: {e}")
+            raise
+
+    def add_alert(self, alert):
+        try:
+            self.alerts.append(alert)
+            logging.info(f"New alert added: {alert}")
+        except Exception as e:
+            logging.error(f"Failed to add alert: {e}")
+            raise
+
+    def get_alerts(self):
+        try:
+            return self.alerts
+        except Exception as e:
+            logging.error(f"Failed to get alerts: {e}")
+            raise
+
+    def clear_alerts(self):
+        try:
+            self.alerts.clear()
+            logging.info("All alerts cleared")
+        except Exception as e:
+            logging.error(f"Failed to clear alerts: {e}")
+            raise
+
+    def retrieve_saved_frames(self, client_id):
+        try:
+            if client_id in self.external_devices:
+                return self.external_devices[client_id].retrieve_frames()
+            else:
+                logging.error(f"Client {client_id} does not exist")
+                return None
+        except Exception as e:
+            logging.error(f"Failed to retrieve saved frames for client {client_id}: {e}")
             raise

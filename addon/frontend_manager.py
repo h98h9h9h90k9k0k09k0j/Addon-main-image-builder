@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import logging
-from google.protobuf.json_format import MessageToDict
 
 class FrontendManager:
     def __init__(self, distribution_manager):
@@ -87,6 +86,38 @@ class FrontendManager:
             try:
                 clients = self.distribution_manager.list_clients()
                 return jsonify({'clients': clients}), 200
+            except Exception as e:
+                logging.error(f"Exception: {e}")
+                return jsonify({'error': 'Internal Server Error'}), 500
+
+        @self.app.route('/alerts', methods=['GET'])
+        def get_alerts():
+            try:
+                alerts = self.distribution_manager.get_alerts()
+                return jsonify({'alerts': alerts}), 200
+            except Exception as e:
+                logging.error(f"Exception: {e}")
+                return jsonify({'error': 'Internal Server Error'}), 500
+
+        @self.app.route('/clear_alerts', methods=['POST'])
+        def clear_alerts():
+            try:
+                self.distribution_manager.clear_alerts()
+                return jsonify({'message': 'Alerts cleared'}), 200
+            except Exception as e:
+                logging.error(f"Exception: {e}")
+                return jsonify({'error': 'Internal Server Error'}), 500
+
+        @self.app.route('/retrieve_frames', methods=['POST'])
+        def retrieve_frames():
+            try:
+                data = request.get_json()
+                client_id = data['client_id']
+                frames = self.distribution_manager.retrieve_saved_frames(client_id)
+                return jsonify({'frames': frames}), 200
+            except KeyError as e:
+                logging.error(f"KeyError: {e}")
+                return jsonify({'error': f'Missing key: {e}'}), 400
             except Exception as e:
                 logging.error(f"Exception: {e}")
                 return jsonify({'error': 'Internal Server Error'}), 500
