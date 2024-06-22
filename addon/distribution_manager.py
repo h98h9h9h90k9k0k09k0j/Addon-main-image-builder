@@ -45,8 +45,8 @@ class DistributionManager:
                         'type': task_type,
                         'client_id': client_id
                     }
-                    self.external_devices[client_id].stream_video(task_id, self.ffmpeg_manager)
                     logging.info(f"Started video stream task {task_id} for client {client_id}")
+                    self.external_devices[client_id].stream_video(task_id, self.ffmpeg_manager)
             else:
                 if client_id in self.external_devices:
                     self.tasks[task_id] = {

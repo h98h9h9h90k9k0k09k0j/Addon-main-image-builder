@@ -23,8 +23,8 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy data for add-on
-COPY . /app
+# Copy only the requirements file to leverage Docker cache
+COPY requirements.txt /app/requirements.txt
 
 # Create a virtual environment in the /opt/venv directory
 RUN python3 -m venv /opt/venv 
@@ -36,6 +36,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
+# Copy data for add-on
+COPY . /app
 
 # Use bash for running commands
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
