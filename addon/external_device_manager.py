@@ -63,6 +63,7 @@ class ExternalDeviceManager:
             raise
 
     def retrieve_frames(self):
+        logging.info(f"Requesting saved frames from external device at {self.address}")
         try:
             request = workloads_pb2.TaskRequest(task_id="retrieve_frames", task_type="retrieve_frames", payload="")
             response = self.task_stub.RetrieveFrames(request)
@@ -72,6 +73,7 @@ class ExternalDeviceManager:
                     "image": frame_data.image,
                     "timestamp": frame_data.timestamp
                 })
+            logging.info(f"Retrieved frames: {frames}")
             return frames
         except grpc.RpcError as e:
             logging.error(f"gRPC error during retrieving frames: {e}")
@@ -81,9 +83,10 @@ class ExternalDeviceManager:
             raise
 
     def update_processing_type(self, processing_type):
+        logging.info(f"Updating processing type to {processing_type} for external device at {self.address}")
         try:
             self.processing_type = processing_type
-            logging.info(f"Updated processing type to {processing_type}")
+            logging.info(f"Successfully updated processing type to {processing_type}")
         except Exception as e:
             logging.error(f"Failed to update processing type: {e}")
             raise
