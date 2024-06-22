@@ -1,4 +1,5 @@
 import logging
+import uuid
 from ffmpeg_manager import FFmpegManager
 from external_device_manager import ExternalDeviceManager
 
@@ -31,10 +32,11 @@ class DistributionManager:
     def list_clients(self):
         return list(self.external_devices.keys())
 
-    def start_task(self, task_id, task_type, client_id):
+    def start_task(self, task_type, client_id):
         if client_id not in self.external_devices:
             logging.error(f"Invalid client ID: {client_id}")
             return
+        task_id = str(uuid.uuid4())
         try:
             if task_type == 'video_stream':
                 self.ffmpeg_manager.start_stream(task_id)
@@ -53,6 +55,7 @@ class DistributionManager:
                     }
                     self.external_devices[client_id].send_task(task_id, task_type)
                     logging.info(f"Started task {task_id} of type {task_type} for client {client_id}")
+            return task_id
         except Exception as e:
             logging.error(f"Failed to start task {task_id}: {e}")
             raise

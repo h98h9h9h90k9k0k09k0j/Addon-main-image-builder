@@ -12,10 +12,9 @@ class FrontendManager:
         def start_stream():
             try:
                 data = request.get_json()
-                task_id = data['task_id']
                 client_id = data['client_id']
-                self.distribution_manager.start_task(task_id, 'video_stream', client_id)
-                return jsonify({'message': 'Stream started'}), 200
+                task_id = self.distribution_manager.start_task('video_stream', client_id)
+                return jsonify({'message': f'Stream task started with id {task_id}'}), 200
             except KeyError as e:
                 logging.error(f"KeyError: {e}")
                 return jsonify({'error': f'Missing key: {e}'}), 400
