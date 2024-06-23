@@ -1,6 +1,7 @@
 pyyaml
 websockets
 flask
+flask-cors
 requests
 grpcio
 grpcio-tools

@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import logging
 
 class FrontendManager:
     def __init__(self, distribution_manager):
         self.app = Flask(__name__)
+        CORS(self.app, resources={r"/*": {"origins": "*"}})
         self.distribution_manager = distribution_manager
         self.setup_routes()
 
