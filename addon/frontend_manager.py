@@ -132,8 +132,9 @@ class FrontendManager:
                 data = request.get_json()
                 client_id = data['client_id']
                 frames = self.distribution_manager.retrieve_saved_frames(client_id)
+                framecount = len(frames)
                 logging.info(f"Retrieved frames for client_id: {client_id}")
-                return jsonify({'frames': frames}), 200
+                return jsonify({'frames': framecount}), 200
             except KeyError as e:
                 logging.error(f"KeyError: {e}")
                 return jsonify({'error': f'Missing key: {e}'}), 400

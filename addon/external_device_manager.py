@@ -73,7 +73,7 @@ class ExternalDeviceManager:
                     "image": frame_data.image,
                     "timestamp": frame_data.timestamp
                 })
-            logging.info(f"Retrieved frames: {frames}")
+            #logging.info(f"Retrieved frames: {frames}")
             return frames
         except grpc.RpcError as e:
             logging.error(f"gRPC error during retrieving frames: {e}")
