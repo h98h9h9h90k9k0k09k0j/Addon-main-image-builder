@@ -69,7 +69,7 @@ class DistributionManager:
                 task_type = self.tasks[task_id]['type']
                 if task_type == 'video_stream':
                     self.ffmpeg_manager.stop_stream(task_id)
-                del self.tasks[task_id]
+                #del self.tasks[task_id]
                 logging.info(f"Stopped task {task_id}")
             else:
                 logging.warning(f"Task {task_id} does not exist")
